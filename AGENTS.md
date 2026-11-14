@@ -7,7 +7,7 @@ Clean Architecture with strict dependency rule: **domain → usecase → adapter
 ```
 cmd/dotset/main.go            # Entry point, manual DI wiring
 internal/domain/              # Entities + FileSystem port (zero deps)
-internal/usecase/             # AdoptDotfileUseCase (business logic)
+internal/usecase/             # AdoptDotfileUseCase, UndoDotfileUseCase (business logic)
 internal/adapter/             # OSFileSystem (os pkg) + CLI output
 ```
 
@@ -41,6 +41,14 @@ Linter config is `.golangci.yml` at the project root. Run `make fmt` before comm
 - **Already-linked detection**: if `~/.file` is a symlink already pointing to the same source, the use case returns an error ("already linked to same source — nothing to do").
 - **Directories are rejected**: only regular files. Returns `domain.ErrTargetIsDir`.
 - **No-op when target doesn't exist**: symlink is created directly, no backup.
+
+## Undo behavior
+
+- **`dotset undo <folder>`** resolves the target with the same folder rules as adopt (`resolveDotfile` in `internal/usecase/resolve.go`, shared by both use cases). The folder must still contain exactly one regular file.
+- **Strict link check**: undo only proceeds when `~/.<file>` exists, is a symlink, and points exactly at `<cwd>/<folder>/<file>`. A regular file returns `ErrTargetNotSymlink`; a symlink to another path returns `ErrTargetNotLinked`. A missing target returns `ErrTargetNotFound`. Nothing is deleted in these cases.
+- **Backup is consumed**: the backup bytes are read before any mutation, the symlink is removed, the bytes are written to the target with mode `0o600`, then `<file>.bak` is deleted.
+- **No backup**: the symlink is removed, `UndoResult.BackupMissing` is true, and the CLI prints a notice that the original was not restored.
+- **No force flag**: there is no way to undo a target that is not dotset's own symlink.
 
 ## Dependencies
 

@@ -6,7 +6,7 @@
 *.dll
 *.so
 *.dylib
-dotset
+/dotset
 
 # Test binary, built with `go test -c`
 *.test

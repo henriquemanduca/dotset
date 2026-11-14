@@ -30,6 +30,18 @@ func (c *CLI) PrintSuccess(result *usecase.AdoptResult) {
 	}
 }
 
+// PrintUndoSuccess prints the undo result to stdout.
+func (c *CLI) PrintUndoSuccess(result *usecase.UndoResult) {
+	d := result.Dotfile
+	fmt.Fprintf(c.stdout, "✓ Unlinked %s\n", d.Name)
+	fmt.Fprintf(c.stdout, "  Target  : %s\n", d.TargetPath)
+	if result.Restored {
+		fmt.Fprintf(c.stdout, "  Restored: %s\n", d.BackupPath)
+		return
+	}
+	fmt.Fprintf(c.stdout, "  Backup  : none at %s — original not restored\n", d.BackupPath)
+}
+
 // PrintError prints an error to stderr and exits with code 1.
 func (c *CLI) PrintError(err error) {
 	fmt.Fprintf(c.stderr, "dotset: %v\n", err)
@@ -47,6 +59,7 @@ func (c *CLI) PrintUsage() {
 
 Usage:
   dotset [flags] <folder>
+  dotset [flags] undo <folder>
 
 Flags:
   -v, --version        Print version
@@ -63,9 +76,14 @@ Description:
     3. Backs up ~/.<file> to ~/.local/state/dotset/<file>.bak if it exists.
     4. Creates a symlink: ~/.<file> -> ./<folder>/<file>
 
+  undo reverses the adoption: it removes the symlink and restores the
+  original file from ~/.local/state/dotset/<file>.bak when a backup exists.
+  If there is no backup, the symlink is still removed and a notice is shown.
+
 Examples:
   dotset bash                     # Adopt the file inside ./bash
   dotset nvim                     # Adopt the file inside ./nvim
+  dotset undo bash                # Unlink it and restore the original
   dotset --version                # Print version
 `)
 }

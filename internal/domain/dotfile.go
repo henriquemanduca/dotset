@@ -18,6 +18,8 @@ var (
 	ErrTargetNotFound       = errors.New("target dotfile not found in home directory")
 	ErrTargetIsDir          = errors.New("target is a directory, not a file")
 	ErrTargetIsSymlink      = errors.New("target is already a symlink")
+	ErrTargetNotSymlink     = errors.New("target is not a symlink, refusing to remove a regular file")
+	ErrTargetNotLinked      = errors.New("target symlink does not point to the source file")
 )
 
 // Dotfile represents a dotfile being managed by dotset.

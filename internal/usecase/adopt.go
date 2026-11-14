@@ -5,7 +5,6 @@ package usecase
 import (
 	"errors"
 	"fmt"
-	"path/filepath"
 
 	"github.com/henrique/dotset/internal/domain"
 )
@@ -43,37 +42,10 @@ type AdoptResult struct {
 // The folder lives inside workingDir and must contain exactly one regular file;
 // that file's name determines the dotfile linked into the home directory.
 func (uc *AdoptDotfileUseCase) Execute(folder, workingDir string) (*AdoptResult, error) {
-	sourceDir := filepath.Join(workingDir, folder)
-
-	// 0. Verify the source folder exists and is a directory.
-	dirInfo, err := uc.fs.Stat(sourceDir)
+	// 0. Locate the single regular file inside the source folder.
+	d, err := resolveDotfile(uc.fs, folder, workingDir, uc.homeDir, uc.backupDir)
 	if err != nil {
-		return nil, fmt.Errorf("%w: %q not found in the current directory (pass a folder name)", domain.ErrSourceDirNotFound, folder)
-	}
-	if !dirInfo.IsDir {
-		return nil, fmt.Errorf("%w: %q is not a folder (pass a folder name)", domain.ErrSourceDirNotFound, folder)
-	}
-
-	// Discover the single regular file inside the folder.
-	entries, err := uc.fs.ReadDir(sourceDir)
-	if err != nil {
-		return nil, fmt.Errorf("reading source folder: %w", err)
-	}
-	if len(entries) == 0 {
-		return nil, fmt.Errorf("%w: %s", domain.ErrSourceFolderEmpty, sourceDir)
-	}
-	if len(entries) > 1 {
-		return nil, fmt.Errorf("%w: %s contains %d entries", domain.ErrSourceFolderMultiple, sourceDir, len(entries))
-	}
-
-	entry := entries[0]
-	if entry.IsDir || entry.IsSymlink {
-		return nil, fmt.Errorf("%w: %s", domain.ErrSourceNotRegularFile, entry.Path)
-	}
-
-	d, err := domain.NewDotfile(filepath.Base(entry.Path), sourceDir, uc.homeDir, uc.backupDir)
-	if err != nil {
-		return nil, fmt.Errorf("invalid dotfile: %w", err)
+		return nil, err
 	}
 
 	// 1. Verify source exists in the source folder.

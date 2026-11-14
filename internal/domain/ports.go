@@ -13,6 +13,8 @@ type FileInfo struct {
 type FileSystem interface {
 	// Stat returns file info without following symlinks.
 	Stat(path string) (FileInfo, error)
+	// ReadDir returns the direct children of a directory without following symlinks.
+	ReadDir(path string) ([]FileInfo, error)
 	// ReadFile reads the entire contents of a file.
 	ReadFile(path string) ([]byte, error)
 	// WriteFile writes data to a file with the given permissions.

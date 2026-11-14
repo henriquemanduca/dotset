@@ -35,8 +35,8 @@ Linter config is `.golangci.yml` at the project root. Run `make fmt` before comm
 
 ## Domain behavior (non-obvious)
 
-- **Source folder flag**: `-f` / `--folder` overrides where the dotfile is looked up. Relative paths resolve from cwd in `main`; the use case validates the folder is a directory (`domain.ErrSourceDirNotFound`). Target is always `~/.<file>`.
-- **Leading dot is auto-prepended** for the target path only. `dotset bashrc` creates `~/.bashrc → <sourceDir>/bashrc`. The source name stays as given.
+- **Folder argument**: the single positional arg is a folder inside the cwd (`dotset bash` → `<cwd>/bash`). The folder must contain exactly one regular file; that file's name determines the target (`~/.<file>`). Relative resolution happens in the use case via `filepath.Join(cwd, folder)`; the use case validates the folder (`domain.ErrSourceDirNotFound`) and the entry count/type (`ErrSourceFolderEmpty`, `ErrSourceFolderMultiple`, `ErrSourceNotRegularFile`).
+- **Leading dot is auto-prepended** for the target path only. `bash/bashrc` creates `~/.bashrc → <cwd>/bash/bashrc`. The source name stays as given.
 - **Backup dir**: `~/.local/state/dotset/` — XDG state directory, not config.
 - **Already-linked detection**: if `~/.file` is a symlink already pointing to the same source, the use case returns an error ("already linked to same source — nothing to do").
 - **Directories are rejected**: only regular files. Returns `domain.ErrTargetIsDir`.

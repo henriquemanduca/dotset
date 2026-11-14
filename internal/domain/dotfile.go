@@ -10,11 +10,14 @@ import (
 
 // Common domain errors.
 var (
-	ErrSourceNotFound    = errors.New("source file not found in the source folder")
-	ErrSourceDirNotFound = errors.New("source folder not found or not a directory")
-	ErrTargetNotFound    = errors.New("target dotfile not found in home directory")
-	ErrTargetIsDir       = errors.New("target is a directory, not a file")
-	ErrTargetIsSymlink   = errors.New("target is already a symlink")
+	ErrSourceNotFound       = errors.New("source file not found in the source folder")
+	ErrSourceDirNotFound    = errors.New("source folder not found or not a directory")
+	ErrSourceFolderEmpty    = errors.New("source folder is empty")
+	ErrSourceFolderMultiple = errors.New("source folder must contain exactly one file")
+	ErrSourceNotRegularFile = errors.New("source entry is not a regular file")
+	ErrTargetNotFound       = errors.New("target dotfile not found in home directory")
+	ErrTargetIsDir          = errors.New("target is a directory, not a file")
+	ErrTargetIsSymlink      = errors.New("target is already a symlink")
 )
 
 // Dotfile represents a dotfile being managed by dotset.

@@ -16,34 +16,30 @@ Requires Go 1.27+.
 
 ## Usage
 
-Run it **from inside your dotfiles repository**:
+Run it **from inside your dotfiles repository**, passing the name of a folder:
 
 ```bash
 cd ~/dotfiles
-dotset .bashrc
+dotset bash
+```
+
+The folder must contain exactly one regular file. For example:
+
+```
+~/dotfiles/
+└── bash/
+    └── .bashrc
 ```
 
 ```
 ✓ Adopted .bashrc
-  Source : /home/user/dotfiles/.bashrc
-  Target : /home/user/.bashrc → /home/user/dotfiles/.bashrc
+  Source : /home/user/dotfiles/bash/.bashrc
+  Target : /home/user/.bashrc → /home/user/dotfiles/bash/.bashrc
   Backup : /home/user/.local/state/dotset/.bashrc.bak
 ```
 
-The leading dot is optional — `dotset bashrc` creates `~/.bashrc`.
-
-### Choosing the source folder
-
-Use `-f` / `--folder` to look for the dotfile somewhere other than the current
-directory — handy for grouping files by scenario (`work/`, `server/`, `laptop/`):
-
-```bash
-dotset -f ~/dotfiles/work .bashrc
-dotset --folder=./server .vimrc
-```
-
-Relative paths are resolved from the current directory. The target is still
-always `~/.<file>` in your home directory.
+The source filename determines the target. The leading dot is optional —
+`bash/bashrc` also creates `~/.bashrc`.
 
 ```bash
 dotset --version   # print version
@@ -51,15 +47,18 @@ dotset --version   # print version
 
 ## How it works
 
-1. Locates the source file in the chosen folder (default: current directory).
-2. Looks up the target (`~/.<file>`) in your home directory.
+1. Looks up `./<folder>` in the current directory and requires it to contain
+   exactly one regular file.
+2. Uses that file's name to resolve the target (`~/.<file>`).
 3. If the target exists, copies it to `~/.local/state/dotset/<file>.bak`.
-4. Replaces the target with a symlink to the source.
+4. Replaces the target with a symlink to `<folder>/<file>`.
 
 ## Behavior notes
 
-- **Only regular files.** Directories are rejected.
-- **The source folder must exist and be a directory** — validated before any change.
+- **Folders contain exactly one regular file.** Empty folders, folders with
+  more than one entry, and subdirectories or symlinks inside the folder are
+  rejected.
+- **The folder must exist and be a directory** — validated before any change.
 - **No backup needed** when the target doesn't exist — the symlink is created directly.
 - **Idempotency guard:** if the target is already a symlink to the same source, `dotset` exits with an error instead of touching anything.
 - **Existing symlinks** (pointing elsewhere) are backed up by reading their content before replacement.

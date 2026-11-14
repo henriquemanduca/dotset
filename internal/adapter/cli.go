@@ -46,27 +46,26 @@ func (c *CLI) PrintUsage() {
 	fmt.Fprintf(c.stderr, `dotset — manage dotfiles with symlinks
 
 Usage:
-  dotset [flags] <file>
+  dotset [flags] <folder>
 
 Flags:
-  -f, --folder <dir>   Folder where the dotfile is looked up (default: current directory)
   -v, --version        Print version
 
 Description:
-  Adopts a dotfile from a dotfiles folder into your home directory via a symlink.
+  Adopts the file inside <folder> into your home directory via a symlink.
+
+  <folder> is resolved relative to the current directory and must contain
+  exactly one regular file. That file's name determines the target.
 
   Steps:
-    1. Searches for <file> in the chosen folder (default: current directory).
-    2. Looks up ~/.<file> in your home directory.
-    3. Backs up the original to ~/.local/state/dotset/<file>.bak.
-    4. Creates a symlink: ~/.<file> -> <folder>/<file>
+    1. Looks up ./<folder> in the current directory.
+    2. Reads the single file inside it.
+    3. Backs up ~/.<file> to ~/.local/state/dotset/<file>.bak if it exists.
+    4. Creates a symlink: ~/.<file> -> ./<folder>/<file>
 
 Examples:
-  dotset .bashrc                  # Adopt .bashrc from the current directory
-  dotset bashrc                   # Same as above (leading dot is added automatically)
-  dotset -f ~/dotfiles/work .bashrc
-                                  # Look for .bashrc in ~/dotfiles/work
-  dotset --folder=./server .vimrc # Look for .vimrc in ./server
+  dotset bash                     # Adopt the file inside ./bash
+  dotset nvim                     # Adopt the file inside ./nvim
   dotset --version                # Print version
 `)
 }

@@ -5,15 +5,17 @@ package usecase
 import (
 	"errors"
 	"fmt"
+	"path/filepath"
 
 	"github.com/henrique/dotset/internal/domain"
 )
 
 // AdoptDotfileUseCase orchestrates the adoption of a dotfile:
-// 1. Verifies the source file exists in the current directory (dotfiles repo).
-// 2. Checks the target in the home directory.
-// 3. Backs up the original target file.
-// 4. Creates a symlink from the home directory target to the source.
+//  1. Verifies the source folder exists in the current directory (dotfiles repo)
+//     and contains exactly one regular file.
+//  2. Checks the target in the home directory.
+//  3. Backs up the original target file.
+//  4. Creates a symlink from the home directory target to the source.
 type AdoptDotfileUseCase struct {
 	fs        domain.FileSystem
 	homeDir   string
@@ -37,22 +39,41 @@ type AdoptResult struct {
 	WasSymlink bool
 }
 
-// Execute runs the adopt use case for the given filename from sourceDir.
-// sourceDir is the folder where the dotfile is looked up — it may be the
-// current working directory or a folder explicitly chosen by the user.
-func (uc *AdoptDotfileUseCase) Execute(filename, sourceDir string) (*AdoptResult, error) {
-	d, err := domain.NewDotfile(filename, sourceDir, uc.homeDir, uc.backupDir)
-	if err != nil {
-		return nil, fmt.Errorf("invalid dotfile: %w", err)
-	}
+// Execute runs the adopt use case for the given folder from workingDir.
+// The folder lives inside workingDir and must contain exactly one regular file;
+// that file's name determines the dotfile linked into the home directory.
+func (uc *AdoptDotfileUseCase) Execute(folder, workingDir string) (*AdoptResult, error) {
+	sourceDir := filepath.Join(workingDir, folder)
 
 	// 0. Verify the source folder exists and is a directory.
 	dirInfo, err := uc.fs.Stat(sourceDir)
 	if err != nil {
-		return nil, fmt.Errorf("%w: %s", domain.ErrSourceDirNotFound, sourceDir)
+		return nil, fmt.Errorf("%w: %q not found in the current directory (pass a folder name)", domain.ErrSourceDirNotFound, folder)
 	}
 	if !dirInfo.IsDir {
-		return nil, fmt.Errorf("%w: %s", domain.ErrSourceDirNotFound, sourceDir)
+		return nil, fmt.Errorf("%w: %q is not a folder (pass a folder name)", domain.ErrSourceDirNotFound, folder)
+	}
+
+	// Discover the single regular file inside the folder.
+	entries, err := uc.fs.ReadDir(sourceDir)
+	if err != nil {
+		return nil, fmt.Errorf("reading source folder: %w", err)
+	}
+	if len(entries) == 0 {
+		return nil, fmt.Errorf("%w: %s", domain.ErrSourceFolderEmpty, sourceDir)
+	}
+	if len(entries) > 1 {
+		return nil, fmt.Errorf("%w: %s contains %d entries", domain.ErrSourceFolderMultiple, sourceDir, len(entries))
+	}
+
+	entry := entries[0]
+	if entry.IsDir || entry.IsSymlink {
+		return nil, fmt.Errorf("%w: %s", domain.ErrSourceNotRegularFile, entry.Path)
+	}
+
+	d, err := domain.NewDotfile(filepath.Base(entry.Path), sourceDir, uc.homeDir, uc.backupDir)
+	if err != nil {
+		return nil, fmt.Errorf("invalid dotfile: %w", err)
 	}
 
 	// 1. Verify source exists in the source folder.

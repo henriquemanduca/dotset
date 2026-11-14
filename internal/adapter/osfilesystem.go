@@ -4,6 +4,7 @@ package adapter
 
 import (
 	"os"
+	"path/filepath"
 
 	"github.com/henrique/dotset/internal/domain"
 )
@@ -29,6 +30,22 @@ func (fs *OSFileSystem) Stat(path string) (domain.FileInfo, error) {
 		IsDir:     info.IsDir(),
 		IsSymlink: info.Mode()&os.ModeSymlink != 0,
 	}, nil
+}
+
+func (fs *OSFileSystem) ReadDir(path string) ([]domain.FileInfo, error) {
+	entries, err := os.ReadDir(path)
+	if err != nil {
+		return nil, err
+	}
+	infos := make([]domain.FileInfo, 0, len(entries))
+	for _, entry := range entries {
+		infos = append(infos, domain.FileInfo{
+			Path:      filepath.Join(path, entry.Name()),
+			IsDir:     entry.IsDir(),
+			IsSymlink: entry.Type()&os.ModeSymlink != 0,
+		})
+	}
+	return infos, nil
 }
 
 func (fs *OSFileSystem) ReadFile(path string) ([]byte, error) {

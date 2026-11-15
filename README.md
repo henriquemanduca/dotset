@@ -6,6 +6,18 @@ A small CLI to manage dotfiles with symlinks — inspired by [GNU Stow](https://
 
 ## Install
 
+### Prebuilt binary (GitHub Releases)
+
+Downloads the latest release, verifies its SHA-256 checksum, and installs to `~/.local/bin`:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/henriquemanduca/dotset/main/scripts/install.sh | sh
+```
+
+See `./scripts/install.sh --help` for `--version`, `--user`, `--system`, and `--prefix` options.
+
+### From source
+
 ```bash
 make install                    # installs to ~/.local/bin
 make install ARGS="--system"    # installs to /usr/local/bin (sudo when needed)

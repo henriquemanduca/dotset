@@ -3,7 +3,6 @@ package adapter
 import (
 	"fmt"
 	"io"
-	"os"
 
 	"github.com/henrique/dotset/internal/usecase"
 )
@@ -42,15 +41,14 @@ func (c *CLI) PrintUndoSuccess(result *usecase.UndoResult) {
 	fmt.Fprintf(c.stdout, "  Backup  : none at %s — original not restored\n", d.BackupPath)
 }
 
-// PrintError prints an error to stderr and exits with code 1.
+// PrintError prints an error to stderr. Process exit is owned by main.
 func (c *CLI) PrintError(err error) {
 	fmt.Fprintf(c.stderr, "dotset: %v\n", err)
-	os.Exit(1)
 }
 
-// PrintVersion prints the application version.
-func (c *CLI) PrintVersion(version string) {
-	fmt.Fprintf(c.stdout, "dotset %s\n", version)
+// PrintVersion prints a preformatted version line.
+func (c *CLI) PrintVersion(versionLine string) {
+	fmt.Fprintln(c.stdout, versionLine)
 }
 
 // PrintUsage prints the usage information.

@@ -5,21 +5,31 @@
 Clean Architecture with strict dependency rule: **domain → usecase → adapter → cmd**. Inner layers never import outer layers.
 
 ```
-cmd/dotset/main.go            # Entry point, manual DI wiring
+cmd/dotset/main.go            # Entry point, manual DI wiring, exit-code ownership
+internal/buildinfo/           # Version/commit/date metadata injected via ldflags
 internal/domain/              # Entities + FileSystem port (zero deps)
 internal/usecase/             # AdoptDotfileUseCase, UndoDotfileUseCase (business logic)
 internal/adapter/             # OSFileSystem (os pkg) + CLI output
 ```
 
+`main.go` owns `os.Exit`; the CLI adapter only writes to its `io.Writer`s. Exit
+codes: `0` success, `1` runtime error, `2` usage error.
+
 ## Commands
 
 ```bash
-make build        # go build → bin/dotset
+make help         # list targets (default goal)
+make build        # static build → bin/dotset (buildinfo ldflags)
+make build-all    # cross-compiled binaries in bin/
+make checksums    # SHA-256 of release binaries
 make test         # go test -race -count=1 ./...
 make test-cover   # tests + coverage.html
 make lint         # golangci-lint run ./...
 make lint-fix     # golangci-lint run --fix ./...
-make fmt          # gofmt -s -w . && go vet ./...
+make fmt          # go fmt ./... && go vet ./...
+make check        # fmt + test
+make install      # ./install.sh → ~/.local/bin (ARGS="--system" for /usr/local/bin)
+make uninstall    # ./install.sh --uninstall
 make audit        # govulncheck ./...
 ```
 
@@ -53,3 +63,15 @@ Linter config is `.golangci.yml` at the project root. Run `make fmt` before comm
 ## Dependencies
 
 Zero third-party modules. Standard library only (`go.mod` has no `require` block). Do not add external dependencies.
+
+## Shared standards
+
+This project follows the workspace-wide Go CLI contract in
+[`docs/go-cli-project-standards.md`](../docs/go-cli-project-standards.md).
+
+- Entrypoint is `cmd/dotset/main.go`; `main` owns `os.Exit` (via `run`).
+- Exit codes: `0` success, `1` runtime error, `2` usage error.
+- Build output is `bin/`; release metadata comes from `internal/buildinfo`.
+- Mandatory targets: `help` (default), `build`, `run`, `test`, `test-cover`,
+  `fmt`, `vet`, `lint`, `check`, `clean`, `install`, `uninstall`.
+- `make check` must pass before committing; tests run with `-race -count=1`.

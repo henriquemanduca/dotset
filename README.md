@@ -7,12 +7,16 @@ A small CLI to manage dotfiles with symlinks — inspired by [GNU Stow](https://
 ## Install
 
 ```bash
-make install       # installs to $GOPATH/bin
-# or
-make build         # builds ./bin/dotset
+make install                    # installs to ~/.local/bin
+make install ARGS="--system"    # installs to /usr/local/bin (sudo when needed)
+./install.sh --prefix /opt/dot  # installs to /opt/dot/bin
+make build                      # builds ./bin/dotset
 ```
 
-Requires Go 1.27+.
+`make install` installs into `$(HOME)/.local/bin` by default; see `./install.sh --help`
+for `--user`, `--system`, `--prefix`, and `--uninstall`.
+
+Requires Go 1.27+ (the canonical version is declared in `go.mod`).
 
 ## Usage
 
@@ -106,9 +110,17 @@ Clean Architecture with a strict `domain → usecase → adapter → cmd` depend
 ```bash
 make test          # go test -race -count=1 ./...
 make test-cover    # coverage report → coverage.html
-make lint          # golangci-lint
-make fmt           # gofmt + go vet
+make lint          # golangci-lint (config in .golangci.yml)
+make fmt           # go fmt + go vet
+make check         # fmt + test
+make build-all     # Linux/macOS/Windows binaries in ./bin
+make checksums     # SHA-256 of release binaries
+make audit         # govulncheck
 ```
+
+Exit codes are `0` on success, `1` on runtime errors, and `2` on usage errors.
+Errors are printed by the CLI adapter; process exit is owned by `cmd/dotset/main.go`.
+Build metadata (`version`, `commit`, `date`) lives in `internal/buildinfo`.
 
 See [AGENTS.md](AGENTS.md) for agent-facing notes.
 
